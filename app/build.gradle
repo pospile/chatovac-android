@@ -1,0 +1,43 @@
+apply plugin: 'com.android.application'
+apply plugin: 'io.objectbox'
+
+android {
+    compileSdkVersion 26
+    buildToolsVersion "26.0.2"
+    defaultConfig {
+        applicationId "cz.underholding.chatovac"
+        minSdkVersion 19
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
+
+    compile 'com.koushikdutta.ion:ion:2.+'
+    compile 'net.danlew:android.joda:2.9.9.1'
+    compile 'com.android.support:appcompat-v7:26.0.0-alpha1'
+    compile 'com.lapism:searchview:5.0.0-alpha7'
+    compile 'com.android.support:cardview-v7:26.1.0'
+    compile 'com.google.android:flexbox:0.3.1'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile 'br.com.mobiplus:simple-recyclerview-library:0.1.3'
+    compile 'com.github.ajithvgiri:SearchDialog:v1.0'
+    compile 'com.github.timigod:android-chat-ui:v0.1.3'
+    compile 'com.sirvar:robin:0.0.1'
+    compile 'com.geniusforapp.fancydialog:FancyDialog:0.1.4'
+    testCompile 'junit:junit:4.12'
+}

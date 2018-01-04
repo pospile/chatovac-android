@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:chatview="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:weightSum="12">
+
+    <LinearLayout
+        android:layout_weight="3"
+        android:weightSum="3"
+        android:layout_width="match_parent"
+        android:layout_height="65dp"
+        android:orientation="horizontal"
+        android:background="@color/white">
+
+        <TextView
+            android:id="@+id/chatName"
+            android:layout_weight="2"
+            android:layout_margin="0dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:gravity="center_vertical"
+            android:paddingLeft="20dp"
+            android:text="Vojta"
+            android:textColor="@color/colorPrimary"
+            android:textSize="20dp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/search_btn"
+            android:tint="@color/colorPrimary"
+            android:foregroundTint="@color/colorPrimary"
+            android:layout_marginRight="20dp"
+            android:layout_gravity="center_vertical"
+            android:foregroundGravity="center_vertical"
+            android:layout_weight="1"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:src="@drawable/ic_face_black_24dp"/>
+
+    </LinearLayout>
+
+
+    <co.intentservice.chatui.ChatView
+        android:layout_weight="9"
+        android:id="@+id/chat_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        chatview:bubbleElevation="elevated"
+        chatview:bubbleBackgroundRcv="@color/white"
+        chatview:bubbleBackgroundSend="@color/white"/>
+
+
+</LinearLayout>
