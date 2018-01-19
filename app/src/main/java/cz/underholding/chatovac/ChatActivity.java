@@ -66,7 +66,7 @@ public class ChatActivity extends AppCompatActivity {
                 // perform actual message sending
                 try {
                     Ion.with(ChatActivity.this)
-                            .load("http://10.0.2.2:3000/chat/send")
+                            .load(Config.getInstance().url+"/chat/send")
                             .setBodyParameter("name", meta.name)
                             .setBodyParameter("token", meta.token)
                             .setBodyParameter("chat_id", getIntent().getStringExtra("chat_id"))
@@ -92,15 +92,15 @@ public class ChatActivity extends AppCompatActivity {
 
 
         Ion.with(ChatActivity.this)
-                .load("http://10.0.2.2:3000/chat/get/id")
+                .load(Config.getInstance().url+"/chat/get/id")
                 .setBodyParameter("chat_id", getIntent().getStringExtra("chat_id"))
-                .setBodyParameter("limit", "10")
+                .setBodyParameter("limit", "100")
                 .setBodyParameter("offset", "0")
                 .asJsonArray()
                 .setCallback(new FutureCallback<JsonArray>() {
                     @Override
                     public void onCompleted(Exception e, JsonArray result) {
-                        Log.e("CHAT"+getIntent().getStringExtra("chat_id"), "RESULTS:" + result.toString());
+                        //Log.e("CHAT"+getIntent().getStringExtra("chat_id"), "RESULTS:" + result.toString());
                         for (JsonElement jsonElement : result) {
                             JsonObject obj = jsonElement.getAsJsonObject();
                             ChatMessage msg;

@@ -1,33 +1,27 @@
 package cz.underholding.chatovac;
 
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.annotation.IdRes;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.AbsListView;
 import android.widget.ImageView;
-import android.widget.Toast;
 
-import com.ajithvgiri.searchdialog.SearchListItem;
-import com.ajithvgiri.searchdialog.SearchableDialog;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.koushikdutta.async.future.FutureCallback;
 import com.koushikdutta.ion.Ion;
 
-import net.danlew.android.joda.JodaTimeAndroid;
-
-import org.joda.time.DateTime;
+import org.aviran.cookiebar2.CookieBar;
+import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import br.com.mobiplus.simplerecylerview.SimpleLinearRecyclerView;
 import br.com.mobiplus.simplerecylerview.adapter.OnItemClickListener;
@@ -36,6 +30,10 @@ import cz.underholding.chatovac.dbs.MetaData;
 import io.objectbox.Box;
 import io.objectbox.query.Query;
 import io.objectbox.query.QueryBuilder;
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
+
 
 
 public class MainActivity extends AppCompatActivity  {
@@ -56,6 +54,7 @@ public class MainActivity extends AppCompatActivity  {
 
 
         if (meta == null){
+            //DBS.getInstance().closeBoxStore();
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivity(intent);
         }
@@ -64,19 +63,49 @@ public class MainActivity extends AppCompatActivity  {
             // (tohle odstrani login usera)long remove = query.remove();
             setContentView(R.layout.activity_main);
 
-            List<SearchListItem> searchListItems = new ArrayList<>();
-            searchListItems.add(new SearchListItem(0, "Patrik"));
-            searchListItems.add(new SearchListItem(0, "George"));
-            final SearchableDialog searchableDialog = new SearchableDialog(this, searchListItems, "Kontakty");
+
+
+
+
+
+            //-----------------
+
 
             ImageView img_v = (ImageView) findViewById(R.id.search_btn);
-            ImageView logOut = (ImageView) findViewById(R.id.logOut_btn);
             img_v.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    searchableDialog.show();
+                    Ion.with(MainActivity.this)
+                            .load(Config.getInstance().url+"/users/get")
+                            .setBodyParameter("token", meta.token)
+                            .asJsonArray()
+                            .setCallback(new FutureCallback<JsonArray>() {
+                                @Override
+                                public void onCompleted(Exception e, JsonArray result) {
+                                    List<String> searchListItems = new ArrayList<String>();
+
+                                    for(int i = 0; i < result.size(); i++) {
+                                        JsonObject obj = result.get(i).getAsJsonObject();
+                                        if (Objects.equals(meta.name, obj.get("user").getAsString()))
+                                        {
+                                            searchListItems.add(obj.get("user").getAsString()+" - váš účet");
+                                        }
+                                        else
+                                        {
+                                            searchListItems.add(obj.get("user").getAsString());
+                                        }
+                                    }
+
+                                }
+                            });
                 }
             });
+            //-----------------
+
+
+
+            ImageView logOut = (ImageView) findViewById(R.id.logOut_btn);
+
             logOut.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -89,7 +118,7 @@ public class MainActivity extends AppCompatActivity  {
 
 
             Ion.with(MainActivity.this)
-                    .load("http://10.0.2.2:3000/chat/get")
+                    .load(Config.getInstance().url+"/chat/get")
                     .setBodyParameter("name", meta.name)
                     .setBodyParameter("token", meta.token)
                     .asJsonArray()
@@ -97,6 +126,7 @@ public class MainActivity extends AppCompatActivity  {
                         @Override
                         public void onCompleted(Exception e, final JsonArray result) {
                             // do stuff with the result or error
+                            //Log.e("TAG", result.toString());
                             if (e != null)
                             {
                                 Log.e("KRUCI", e.toString());
@@ -110,7 +140,7 @@ public class MainActivity extends AppCompatActivity  {
                                             result) {
 
                                         Ion.with(MainActivity.this)
-                                                .load("http://10.0.2.2:3000/chat/get/last")
+                                                .load(Config.getInstance().url+"/chat/get/last")
                                                 .setBodyParameter("chat_id", res.getAsJsonObject().get("id").toString())
                                                 .setBodyParameter("token", meta.token)
                                                 .asJsonArray()
@@ -119,6 +149,83 @@ public class MainActivity extends AppCompatActivity  {
                                                     public void onCompleted(Exception e, JsonArray result_message) {
 
                                                         //Log.e("TAG", result.toString());
+
+                                                        try {
+                                                            final Socket socket = IO.socket("http://78.102.46.113:2579");
+                                                            socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+
+                                                                @Override
+                                                                public void call(Object... args) {
+
+                                                                    try {
+                                                                        JSONObject obj = new JSONObject();
+                                                                        obj.put("name", meta.name);
+                                                                        obj.put("token", meta.token);
+                                                                        obj.put("device_id", "android");
+                                                                        socket.emit("login", obj);
+                                                                    } catch (JSONException e1) {
+                                                                        e1.printStackTrace();
+                                                                    }
+
+                                                                }
+
+                                                            }).on("notification", new Emitter.Listener() {
+
+                                                                @Override
+                                                                public void call(final Object... args) {
+
+                                                                    runOnUiThread(new Runnable() {
+                                                                        @Override
+                                                                        public void run() {
+                                                                            final JSONObject data = (JSONObject) args[0];
+                                                                            //Log.e("MSG", );
+
+
+                                                                            try {
+                                                                                Ion.with(MainActivity.this)
+                                                                                        .load(Config.getInstance().url+"/users/details")
+                                                                                        .setBodyParameter("id", data.getInt("user")+"")
+                                                                                        .asJsonArray()
+                                                                                        .setCallback(new FutureCallback<JsonArray>() {
+                                                                                            @Override
+                                                                                            public void onCompleted(Exception e, final JsonArray result) {
+                                                                                                try {
+                                                                                                    if (data.getInt("user") != meta.real_id)
+                                                                                                    {
+                                                                                                        JsonObject real_obj = result.get(0).getAsJsonObject();
+                                                                                                        CookieBar.build(MainActivity.this)
+                                                                                                                .setTitle("Nová zpráva od: " + real_obj.get("user"))
+                                                                                                                .setMessage(data.getString("text"))
+                                                                                                                .show();
+                                                                                                    }
+                                                                                                } catch (JSONException e1) {
+                                                                                                    e1.printStackTrace();
+                                                                                                }
+                                                                                            }
+                                                                                        });
+                                                                            } catch (JSONException e1) {
+                                                                                e1.printStackTrace();
+                                                                            }
+                                                                        }
+                                                                    });
+
+
+                                                                }
+
+                                                            }).on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+
+                                                                @Override
+                                                                public void call(Object... args) {
+
+                                                                }
+
+                                                            });
+                                                            socket.connect();
+
+                                                        } catch (URISyntaxException e1) {
+                                                            e1.printStackTrace();
+                                                        }
+
 
                                                         Log.e("TAG", res.toString());
                                                         ChatHead chat = new ChatHead();

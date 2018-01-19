@@ -1,6 +1,7 @@
 package cz.underholding.chatovac;
 
 import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
@@ -60,7 +61,7 @@ public class LoginActivity extends RobinActivity {
                 Settings.Secure.ANDROID_ID);
 
         Ion.with(LoginActivity.this)
-                .load("http://10.0.2.2:3000/user/login")
+                .load(Config.getInstance().url+"/user/login")
                 .setBodyParameter("name", email)
                 .setBodyParameter("pass", password)
                 .setBodyParameter("device_id", "android_"+android_id)
@@ -73,6 +74,9 @@ public class LoginActivity extends RobinActivity {
                             Box<MetaData> metaDataBox = DBS.getInstance().getBoxStore().boxFor(MetaData.class);
                             MetaData data = new MetaData(email, result.getAsJsonObject("token").get("token").getAsString(), result.getAsJsonObject("user").get("id").getAsInt(), "http://10.0.2.2:3000");
                             metaDataBox.put(data);
+                            DBS.getInstance().closeBoxStore();
+                            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                            startActivity(intent);
                             LoginActivity.this.finish();
                         }
                         catch (Exception err) {
