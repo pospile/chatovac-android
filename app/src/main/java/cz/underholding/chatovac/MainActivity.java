@@ -8,6 +8,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.ajithvgiri.searchdialog.OnSearchItemSelected;
+import com.ajithvgiri.searchdialog.SearchListItem;
+import com.ajithvgiri.searchdialog.SearchableDialog;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -64,7 +67,8 @@ public class MainActivity extends AppCompatActivity  {
             setContentView(R.layout.activity_main);
 
 
-
+            Socketize(meta);
+            RenderMainPage(meta);
 
 
 
@@ -82,19 +86,42 @@ public class MainActivity extends AppCompatActivity  {
                             .setCallback(new FutureCallback<JsonArray>() {
                                 @Override
                                 public void onCompleted(Exception e, JsonArray result) {
-                                    List<String> searchListItems = new ArrayList<String>();
+                                    List<SearchListItem> searchListItems = new ArrayList<>();
 
                                     for(int i = 0; i < result.size(); i++) {
                                         JsonObject obj = result.get(i).getAsJsonObject();
                                         if (Objects.equals(meta.name, obj.get("user").getAsString()))
                                         {
-                                            searchListItems.add(obj.get("user").getAsString()+" - váš účet");
+                                            searchListItems.add(new SearchListItem(obj.get("id").getAsInt(), obj.get("user").getAsString()+" - váš účet"));
                                         }
                                         else
                                         {
-                                            searchListItems.add(obj.get("user").getAsString());
+                                            searchListItems.add(new SearchListItem(obj.get("id").getAsInt(), obj.get("user").getAsString()));
                                         }
                                     }
+
+                                    SearchableDialog dlg = new SearchableDialog(MainActivity.this, searchListItems, "Connect with user...");
+                                    dlg.setOnItemSelected(new OnSearchItemSelected() {
+                                        @Override
+                                        public void onClick(int position, SearchListItem searchListItem) {
+                                            Log.e("CONNECTING USERS", searchListItem.getTitle() + " " + searchListItem.getId());
+
+                                            Ion.with(MainActivity.this)
+                                                    .load(Config.getInstance().url+"/users/connect")
+                                                    .setBodyParameter("user1", meta.name)
+                                                    .setBodyParameter("user2", searchListItem.getTitle())
+                                                    .setBodyParameter("token", meta.token)
+                                                    .asJsonObject()
+                                                    .setCallback(new FutureCallback<JsonObject>() {
+                                                        @Override
+                                                        public void onCompleted(Exception e, JsonObject result) {
+                                                            RenderMainPage(meta);
+                                                        }
+                                                    });
+                                        }
+                                    });
+                                    dlg.show();
+
 
                                 }
                             });
@@ -116,122 +143,51 @@ public class MainActivity extends AppCompatActivity  {
             });
 
 
+        }
 
-            Ion.with(MainActivity.this)
-                    .load(Config.getInstance().url+"/chat/get")
-                    .setBodyParameter("name", meta.name)
-                    .setBodyParameter("token", meta.token)
-                    .asJsonArray()
-                    .setCallback(new FutureCallback<JsonArray>() {
-                        @Override
-                        public void onCompleted(Exception e, final JsonArray result) {
-                            // do stuff with the result or error
-                            //Log.e("TAG", result.toString());
-                            if (e != null)
+    }
+
+    public void RenderMainPage(final MetaData meta) {
+        Ion.with(MainActivity.this)
+                .load(Config.getInstance().url+"/chat/get")
+                .setBodyParameter("name", meta.name)
+                .setBodyParameter("token", meta.token)
+                .asJsonArray()
+                .setCallback(new FutureCallback<JsonArray>() {
+                    @Override
+                    public void onCompleted(Exception e, final JsonArray result) {
+                        // do stuff with the result or error
+                        //Log.e("TAG", result.toString());
+                        if (e != null)
+                        {
+                            Log.e("KRUCI", e.toString());
+                        }
+                        else
+                        {
+                            if (result != null)
                             {
-                                Log.e("KRUCI", e.toString());
-                            }
-                            else
-                            {
-                                if (result != null)
-                                {
-                                    final List<ChatHead> chats = new ArrayList<ChatHead>();
-                                    for (final JsonElement res :
-                                            result) {
+                                final List<ChatHead> chats = new ArrayList<ChatHead>();
+                                for (final JsonElement res :
+                                        result) {
 
-                                        Ion.with(MainActivity.this)
-                                                .load(Config.getInstance().url+"/chat/get/last")
-                                                .setBodyParameter("chat_id", res.getAsJsonObject().get("id").toString())
-                                                .setBodyParameter("token", meta.token)
-                                                .asJsonArray()
-                                                .setCallback(new FutureCallback<JsonArray>() {
-                                                    @Override
-                                                    public void onCompleted(Exception e, JsonArray result_message) {
+                                    Ion.with(MainActivity.this)
+                                            .load(Config.getInstance().url+"/chat/get/last")
+                                            .setBodyParameter("chat_id", res.getAsJsonObject().get("id").toString())
+                                            .setBodyParameter("token", meta.token)
+                                            .asJsonArray()
+                                            .setCallback(new FutureCallback<JsonArray>() {
+                                                @Override
+                                                public void onCompleted(Exception e, JsonArray result_message) {
 
-                                                        //Log.e("TAG", result.toString());
-
-                                                        try {
-                                                            final Socket socket = IO.socket("http://78.102.46.113:2579");
-                                                            socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
-
-                                                                @Override
-                                                                public void call(Object... args) {
-
-                                                                    try {
-                                                                        JSONObject obj = new JSONObject();
-                                                                        obj.put("name", meta.name);
-                                                                        obj.put("token", meta.token);
-                                                                        obj.put("device_id", "android");
-                                                                        socket.emit("login", obj);
-                                                                    } catch (JSONException e1) {
-                                                                        e1.printStackTrace();
-                                                                    }
-
-                                                                }
-
-                                                            }).on("notification", new Emitter.Listener() {
-
-                                                                @Override
-                                                                public void call(final Object... args) {
-
-                                                                    runOnUiThread(new Runnable() {
-                                                                        @Override
-                                                                        public void run() {
-                                                                            final JSONObject data = (JSONObject) args[0];
-                                                                            //Log.e("MSG", );
+                                                    //Log.e("TAG", result.toString());
 
 
-                                                                            try {
-                                                                                Ion.with(MainActivity.this)
-                                                                                        .load(Config.getInstance().url+"/users/details")
-                                                                                        .setBodyParameter("id", data.getInt("user")+"")
-                                                                                        .asJsonArray()
-                                                                                        .setCallback(new FutureCallback<JsonArray>() {
-                                                                                            @Override
-                                                                                            public void onCompleted(Exception e, final JsonArray result) {
-                                                                                                try {
-                                                                                                    if (data.getInt("user") != meta.real_id)
-                                                                                                    {
-                                                                                                        JsonObject real_obj = result.get(0).getAsJsonObject();
-                                                                                                        CookieBar.build(MainActivity.this)
-                                                                                                                .setTitle("Nová zpráva od: " + real_obj.get("user"))
-                                                                                                                .setMessage(data.getString("text"))
-                                                                                                                .show();
-                                                                                                    }
-                                                                                                } catch (JSONException e1) {
-                                                                                                    e1.printStackTrace();
-                                                                                                }
-                                                                                            }
-                                                                                        });
-                                                                            } catch (JSONException e1) {
-                                                                                e1.printStackTrace();
-                                                                            }
-                                                                        }
-                                                                    });
-
-
-                                                                }
-
-                                                            }).on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
-
-                                                                @Override
-                                                                public void call(Object... args) {
-
-                                                                }
-
-                                                            });
-                                                            socket.connect();
-
-                                                        } catch (URISyntaxException e1) {
-                                                            e1.printStackTrace();
-                                                        }
-
-
-                                                        Log.e("TAG", res.toString());
-                                                        ChatHead chat = new ChatHead();
-                                                        chat.real_chat_id = res.getAsJsonObject().get("id").getAsString();
-                                                        chat.img_url = "https://www.shareicon.net/data/128x128/2017/05/30/886553_user_512x512.png";
-                                                        chat.name = res.getAsJsonObject().get("name").getAsString();
+                                                    Log.e("TAG", res.toString());
+                                                    ChatHead chat = new ChatHead();
+                                                    chat.real_chat_id = res.getAsJsonObject().get("id").getAsString();
+                                                    chat.img_url = "https://www.shareicon.net/data/128x128/2017/05/30/886553_user_512x512.png";
+                                                    chat.name = res.getAsJsonObject().get("name").getAsString();
+                                                    if (result_message != null) {
                                                         for (JsonElement res_msg : result_message) {
                                                             Log.e("TAG", res_msg.toString());
 
@@ -251,18 +207,110 @@ public class MainActivity extends AppCompatActivity  {
                                                             });
                                                         }
                                                     }
-                                                });
+                                                    else{
+                                                        chats.add(chat);
+                                                        SimpleLinearRecyclerView recyclerView = findViewById(R.id.recyclerView);
+                                                        recyclerView.setCollection(chats, new OnItemClickListener<ChatHead>() {
+                                                            @Override
+                                                            public void onItemClick(ChatHead chat, @IdRes int resId) {
+                                                                Intent intent = new Intent(MainActivity.this, ChatActivity.class);
+                                                                intent.putExtra("chat_id", chat.real_chat_id);
+                                                                intent.putExtra("chat_name", chat.getName());
+                                                                startActivity(intent);
+                                                                //Toast.makeText(MainActivity.this, "Clicked item: " + chat.getName(), Toast.LENGTH_SHORT).show();
+                                                            }
+                                                        });
+                                                    }
 
-                                    }
 
+                                                }
+                                            });
 
                                 }
+
+
+                            }
+                        }
+                    }
+                });
+    }
+
+    public void Socketize(final MetaData meta) {
+        try {
+            final Socket socket = IO.socket("http://78.102.46.113:2579");
+            socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+
+                @Override
+                public void call(Object... args) {
+
+                    try {
+                        JSONObject obj = new JSONObject();
+                        obj.put("name", meta.name);
+                        obj.put("token", meta.token);
+                        obj.put("device_id", "android");
+                        socket.emit("login", obj);
+                    } catch (JSONException e1) {
+                        e1.printStackTrace();
+                    }
+
+                }
+
+            }).on("notification", new Emitter.Listener() {
+
+                @Override
+                public void call(final Object... args) {
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            final JSONObject data = (JSONObject) args[0];
+                            //Log.e("MSG", );
+
+
+                            try {
+                                Ion.with(MainActivity.this)
+                                        .load(Config.getInstance().url+"/users/details")
+                                        .setBodyParameter("id", data.getInt("user")+"")
+                                        .asJsonArray()
+                                        .setCallback(new FutureCallback<JsonArray>() {
+                                            @Override
+                                            public void onCompleted(Exception e, final JsonArray result) {
+                                                try {
+                                                    if (data.getInt("user") != meta.real_id)
+                                                    {
+                                                        JsonObject real_obj = result.get(0).getAsJsonObject();
+                                                        CookieBar.build(MainActivity.this)
+                                                                .setTitle("Nová zpráva od: " + real_obj.get("user"))
+                                                                .setMessage(data.getString("text"))
+                                                                .show();
+                                                    }
+                                                } catch (JSONException e1) {
+                                                    e1.printStackTrace();
+                                                }
+                                            }
+                                        });
+                            } catch (JSONException e1) {
+                                e1.printStackTrace();
                             }
                         }
                     });
 
-        }
 
+                }
+
+            }).on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+
+                @Override
+                public void call(Object... args) {
+
+                }
+
+            });
+            socket.connect();
+
+        } catch (URISyntaxException e1) {
+            e1.printStackTrace();
+        }
     }
 
 
