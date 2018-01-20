@@ -1,5 +1,17 @@
+plugins {
+    id 'com.onesignal.androidsdk.onesignal-gradle-plugin' version '0.8.1'
+}
+apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'
+
+repositories {
+    maven { url 'https://maven.google.com' }
+}
+
 apply plugin: 'com.android.application'
 apply plugin: 'io.objectbox'
+
+
+
 
 android {
     compileSdkVersion 26
@@ -11,6 +23,9 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders = [onesignal_app_id: "cf8e72ca-41a9-4025-99fc-f83a6ba94435",
+                                // Project number pulled from dashboard, local value is ignored.
+                                onesignal_google_project_number: "REMOTE"]
     }
     buildTypes {
         release {
@@ -44,4 +59,5 @@ dependencies {
     }
     testCompile 'junit:junit:4.12'
     compile project(':searchdialog')
+    compile 'com.onesignal:OneSignal:[3.7.1, 3.99.99]'
 }

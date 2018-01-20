@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/chatovac-android.iml" filepath="$PROJECT_DIR$/chatovac-android.iml" />
       <module fileurl="file://$PROJECT_DIR$/searchdialog/searchdialog.iml" filepath="$PROJECT_DIR$/searchdialog/searchdialog.iml" />
+      <module fileurl="file://$PROJECT_DIR$/searchdialog/searchdialog.iml" filepath="$PROJECT_DIR$/searchdialog/searchdialog.iml" />
     </modules>
   </component>
 </project>

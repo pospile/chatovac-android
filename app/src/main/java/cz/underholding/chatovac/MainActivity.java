@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+
 import com.ajithvgiri.searchdialog.OnSearchItemSelected;
 import com.ajithvgiri.searchdialog.SearchListItem;
 import com.ajithvgiri.searchdialog.SearchableDialog;
@@ -208,6 +209,8 @@ public class MainActivity extends AppCompatActivity  {
                                                         }
                                                     }
                                                     else{
+                                                        chat.message = "No messages yet";
+                                                        chat.time = "";
                                                         chats.add(chat);
                                                         SimpleLinearRecyclerView recyclerView = findViewById(R.id.recyclerView);
                                                         recyclerView.setCollection(chats, new OnItemClickListener<ChatHead>() {
@@ -243,12 +246,14 @@ public class MainActivity extends AppCompatActivity  {
                 @Override
                 public void call(Object... args) {
 
+
                     try {
                         JSONObject obj = new JSONObject();
                         obj.put("name", meta.name);
                         obj.put("token", meta.token);
                         obj.put("device_id", "android");
                         socket.emit("login", obj);
+                        Log.e("SOCKET", "connected");
                     } catch (JSONException e1) {
                         e1.printStackTrace();
                     }
@@ -259,6 +264,8 @@ public class MainActivity extends AppCompatActivity  {
 
                 @Override
                 public void call(final Object... args) {
+
+                    Log.e("SOCKET", "notification");
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -284,6 +291,7 @@ public class MainActivity extends AppCompatActivity  {
                                                                 .setMessage(data.getString("text"))
                                                                 .show();
                                                     }
+                                                    socket.emit("notification_resp", args);
                                                 } catch (JSONException e1) {
                                                     e1.printStackTrace();
                                                 }
