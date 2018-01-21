@@ -1,5 +1,6 @@
 package cz.underholding.chatovac;
 
+import android.app.Notification;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.IdRes;
@@ -19,6 +20,7 @@ import com.koushikdutta.async.future.FutureCallback;
 import com.koushikdutta.ion.Ion;
 
 import org.aviran.cookiebar2.CookieBar;
+import org.aviran.cookiebar2.OnActionClickListener;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import br.com.goncalves.pugnotification.notification.PugNotification;
 import br.com.mobiplus.simplerecylerview.SimpleLinearRecyclerView;
 import br.com.mobiplus.simplerecylerview.adapter.OnItemClickListener;
 import cz.underholding.chatovac.dbs.DBS;
@@ -42,7 +45,19 @@ import io.socket.emitter.Emitter;
 
 public class MainActivity extends AppCompatActivity  {
 
+    protected static boolean isVisible = false;
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        setVisible(true);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        setVisible(false);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -286,10 +301,23 @@ public class MainActivity extends AppCompatActivity  {
                                                     if (data.getInt("user") != meta.real_id)
                                                     {
                                                         JsonObject real_obj = result.get(0).getAsJsonObject();
-                                                        CookieBar.build(MainActivity.this)
-                                                                .setTitle("Nová zpráva od: " + real_obj.get("user"))
-                                                                .setMessage(data.getString("text"))
-                                                                .show();
+                                                        if (!isVisible){
+                                                            CookieBar.build(MainActivity.this)
+                                                                    .setTitle("Nová zpráva od: " + real_obj.get("user"))
+                                                                    .setMessage(data.getString("text"))
+                                                                    .show();
+                                                        }
+                                                        else {
+                                                            PugNotification.with(MainActivity.this)
+                                                                    .load()
+                                                                    .title("Nová zpráva od: " + real_obj.get("user"))
+                                                                    .message(data.getString("text"))
+                                                                    .smallIcon(R.drawable.ic_stat_onesignal_default)
+                                                                    .largeIcon(R.drawable.ic_stat_onesignal_default)
+                                                                    .flags(Notification.DEFAULT_VIBRATE)
+                                                                    .simple()
+                                                                    .build();
+                                                        }
                                                     }
                                                     socket.emit("notification_resp", args);
                                                 } catch (JSONException e1) {
