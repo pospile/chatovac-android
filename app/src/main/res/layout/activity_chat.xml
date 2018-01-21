@@ -29,7 +29,7 @@
             android:textStyle="bold" />
 
         <ImageView
-            android:id="@+id/search_btn"
+            android:id="@+id/story_btn"
             android:tint="@color/colorPrimary"
             android:foregroundTint="@color/colorPrimary"
             android:layout_marginRight="20dp"

@@ -1,12 +1,15 @@
 package cz.underholding.chatovac;
 
 import android.content.Intent;
+import android.media.Image;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -15,6 +18,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.koushikdutta.async.future.FutureCallback;
 import com.koushikdutta.ion.Ion;
+import com.rahuljanagouda.statusstories.StatusStoriesActivity;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -43,6 +47,38 @@ public class ChatActivity extends AppCompatActivity {
         Query<MetaData> query = builder.build();
         final MetaData meta = query.findFirst();
         id = meta.real_id;
+
+
+        ImageView story = (ImageView)findViewById(R.id.story_btn);
+        story.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //urls array that should be shown as a story
+                final String[] resources = new String[]{
+                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00001.jpg?alt=media&token=460667e4-e084-4dc5-b873-eefa028cec32",
+                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00002.jpg?alt=media&token=e8e86192-eb5d-4e99-b1a8-f00debcdc016",
+                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00004.jpg?alt=media&token=af71cbf5-4be3-4f8a-8a2b-2994bce38377",
+                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00005.jpg?alt=media&token=7d179938-c419-44f4-b965-1993858d6e71",
+                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00006.jpg?alt=media&token=cdd14cf5-6ed0-4fb7-95f5-74618528a48b",
+                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00007.jpg?alt=media&token=98524820-6d7c-4fb4-89b1-65301e1d6053",
+                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00008.jpg?alt=media&token=7ef9ed49-3221-4d49-8fb4-2c79e5dab333",
+                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00009.jpg?alt=media&token=00d56a11-7a92-4998-a05a-e1dd77b02fe4",
+                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00010.jpg?alt=media&token=24f8f091-acb9-432a-ae0f-7e6227d18803",
+                };
+
+                //launch with presettings
+                Intent a = new Intent(ChatActivity.this, StatusStoriesActivity.class);
+                a.putExtra(StatusStoriesActivity.STATUS_RESOURCES_KEY, resources);
+                a.putExtra(StatusStoriesActivity.STATUS_DURATION_KEY, 3000L);
+                a.putExtra(StatusStoriesActivity.IS_IMMERSIVE_KEY, true);
+                a.putExtra(StatusStoriesActivity.IS_CACHING_ENABLED_KEY, true);
+                a.putExtra(StatusStoriesActivity.IS_TEXT_PROGRESS_ENABLED_KEY, true);
+                startActivity(a);
+
+            }
+        });
+
+
 
         Intent intent = getIntent();
         Log.e("CHAT_ID", intent.getStringExtra("chat_id"));

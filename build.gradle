@@ -21,6 +21,7 @@ allprojects {
         }
         maven { url "https://jitpack.io" }
         maven { url "http://objectbox.net/beta-repo/" }
+        maven { name 'glide-snapshot'; url 'http://oss.sonatype.org/content/repositories/snapshots' }
     }
 }
 
