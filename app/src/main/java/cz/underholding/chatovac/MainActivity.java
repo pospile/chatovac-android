@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity  {
     protected void onCreate(Bundle savedInstanceState) {
 
         DBS.getInstance().initDB(MainActivity.this);
+        Config.getInstance().main = this;
         //JodaTimeAndroid.init(this);
         super.onCreate(savedInstanceState);
 

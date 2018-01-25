@@ -1,9 +1,13 @@
 package cz.underholding.chatovac;
 
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.media.Image;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.widget.AbsListView;
@@ -13,6 +17,11 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.afollestad.materialdialogs.MaterialDialog;
+import com.ajithvgiri.searchdialog.OnSearchItemSelected;
+import com.ajithvgiri.searchdialog.SearchListItem;
+import com.ajithvgiri.searchdialog.SearchableDialog;
+import com.geniusforapp.fancydialog.FancyAlertDialog;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -20,7 +29,13 @@ import com.koushikdutta.async.future.FutureCallback;
 import com.koushikdutta.ion.Ion;
 import com.rahuljanagouda.statusstories.StatusStoriesActivity;
 
+import org.michaelbel.bottomsheetdialog.BottomSheet;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 import co.intentservice.chatui.ChatView;
@@ -30,6 +45,10 @@ import cz.underholding.chatovac.dbs.MetaData;
 import io.objectbox.Box;
 import io.objectbox.query.Query;
 import io.objectbox.query.QueryBuilder;
+import siclo.com.ezphotopicker.api.EZPhotoPick;
+import siclo.com.ezphotopicker.api.EZPhotoPickStorage;
+import siclo.com.ezphotopicker.api.models.EZPhotoPickConfig;
+import siclo.com.ezphotopicker.api.models.PhotoSource;
 
 public class ChatActivity extends AppCompatActivity {
 
@@ -49,31 +68,205 @@ public class ChatActivity extends AppCompatActivity {
         id = meta.real_id;
 
 
+
+        ImageView settings = (ImageView)findViewById(R.id.settings_btn);
+        settings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                int[] items1 = new int[]{
+                        R.string.add_user,
+                        R.string.rename
+                };
+
+                new BottomSheet.Builder(ChatActivity.this)
+                .setTitle("Settings for chat: " + getIntent().getStringExtra("chat_name"))
+                .setDarkTheme(false)
+                .setItems(items1, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        switch (i){
+                            case 0:
+                                //region add_user_to_chat
+                                Ion.with(ChatActivity.this)
+                                        .load(Config.getInstance().url+"/users/get")
+                                        .setBodyParameter("token", meta.token)
+                                        .asJsonArray()
+                                        .setCallback(new FutureCallback<JsonArray>() {
+                                            @Override
+                                            public void onCompleted(Exception e, JsonArray result) {
+                                                List<SearchListItem> searchListItems = new ArrayList<>();
+
+                                                for(int i = 0; i < result.size(); i++) {
+                                                    JsonObject obj = result.get(i).getAsJsonObject();
+                                                    if (Objects.equals(meta.name, obj.get("user").getAsString()))
+                                                    {
+                                                        searchListItems.add(new SearchListItem(obj.get("id").getAsInt(), obj.get("user").getAsString()+" - váš účet"));
+                                                    }
+                                                    else
+                                                    {
+                                                        searchListItems.add(new SearchListItem(obj.get("id").getAsInt(), obj.get("user").getAsString()));
+                                                    }
+                                                }
+
+                                                SearchableDialog dlg = new SearchableDialog(ChatActivity.this, searchListItems, "Add user to chat...");
+                                                dlg.setOnItemSelected(new OnSearchItemSelected() {
+                                                    @Override
+                                                    public void onClick(int position, SearchListItem searchListItem) {
+                                                        Log.e("CONNECTING USERS", searchListItem.getTitle() + " " + searchListItem.getId());
+                                                        Ion.with(ChatActivity.this)
+                                                                .load(Config.getInstance().url+"/chat/invite")
+                                                                .setBodyParameter("user_id", searchListItem.getId()+"")
+                                                                .setBodyParameter("chat_id", getIntent().getStringExtra("chat_id"))
+                                                                .asJsonObject()
+                                                                .setCallback(new FutureCallback<JsonObject>() {
+                                                                    @Override
+                                                                    public void onCompleted(Exception e, JsonObject result) {
+                                                                        if (e != null) {
+                                                                            Log.e("RETURN", e.toString());
+                                                                        }
+                                                                        else {
+                                                                            Log.e("RETURN", result.toString());
+                                                                            Config.getInstance().main.RenderMainPage(meta);
+                                                                            ChatActivity.this.finish();
+                                                                        }
+                                                                    }
+                                                                });
+                                                    }
+                                                });
+                                                dlg.show();
+
+
+                                            }
+                                        });
+                                //endregion
+                                break;
+                            case 1:
+                                //region rename_chat
+                                new MaterialDialog.Builder(ChatActivity.this)
+                                        .title("Change chat name")
+                                        .content("Change chat name from: " + getIntent().getStringExtra("chat_name") + " to: ")
+                                        .inputType(InputType.TYPE_CLASS_TEXT)
+                                        .input("New name", "", new MaterialDialog.InputCallback() {
+                                            @Override
+                                            public void onInput(MaterialDialog dialog, final CharSequence input) {
+                                                // Do something
+                                                Log.e("New name", input.toString());
+                                                Ion.with(ChatActivity.this)
+                                                        .load(Config.getInstance().url+"/chat/rename")
+                                                        .setBodyParameter("chat_id", getIntent().getStringExtra("chat_id"))
+                                                        .setBodyParameter("name",  input.toString())
+                                                        .asJsonObject()
+                                                        .setCallback(new FutureCallback<JsonObject>() {
+                                                            @Override
+                                                            public void onCompleted(Exception e, JsonObject result) {
+                                                                if (e != null){
+                                                                    Log.e("RESP", e.toString());
+                                                                }else {
+                                                                    Log.e("RESP", result.toString());
+                                                                    TextView name = (TextView)findViewById(R.id.chatName);
+                                                                    name.setText(input.toString());
+                                                                    Config.getInstance().main.RenderMainPage(meta);
+                                                                }
+                                                            }
+                                                        });
+                                            }
+                                        }).show();
+                                //endregion
+                                break;
+                        }
+                    }
+                })
+                .show();
+
+            }
+        });
+
+
+        ImageView story_add = (ImageView)findViewById(R.id.story_add_btn);
+        story_add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                EZPhotoPickConfig config = new EZPhotoPickConfig();
+                config.photoSource = PhotoSource.GALLERY; // or PhotoSource.CAMERA
+                config.isAllowMultipleSelect = false; // only for GALLERY pick and API >18
+                EZPhotoPick.startPhotoPickActivity(ChatActivity.this, config);
+            }
+        });
+
+
         ImageView story = (ImageView)findViewById(R.id.story_btn);
         story.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //urls array that should be shown as a story
-                final String[] resources = new String[]{
-                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00001.jpg?alt=media&token=460667e4-e084-4dc5-b873-eefa028cec32",
-                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00002.jpg?alt=media&token=e8e86192-eb5d-4e99-b1a8-f00debcdc016",
-                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00004.jpg?alt=media&token=af71cbf5-4be3-4f8a-8a2b-2994bce38377",
-                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00005.jpg?alt=media&token=7d179938-c419-44f4-b965-1993858d6e71",
-                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00006.jpg?alt=media&token=cdd14cf5-6ed0-4fb7-95f5-74618528a48b",
-                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00007.jpg?alt=media&token=98524820-6d7c-4fb4-89b1-65301e1d6053",
-                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00008.jpg?alt=media&token=7ef9ed49-3221-4d49-8fb4-2c79e5dab333",
-                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00009.jpg?alt=media&token=00d56a11-7a92-4998-a05a-e1dd77b02fe4",
-                        "https://firebasestorage.googleapis.com/v0/b/firebase-satya.appspot.com/o/images%2Fi00010.jpg?alt=media&token=24f8f091-acb9-432a-ae0f-7e6227d18803",
-                };
 
-                //launch with presettings
-                Intent a = new Intent(ChatActivity.this, StatusStoriesActivity.class);
-                a.putExtra(StatusStoriesActivity.STATUS_RESOURCES_KEY, resources);
-                a.putExtra(StatusStoriesActivity.STATUS_DURATION_KEY, 3000L);
-                a.putExtra(StatusStoriesActivity.IS_IMMERSIVE_KEY, true);
-                a.putExtra(StatusStoriesActivity.IS_CACHING_ENABLED_KEY, true);
-                a.putExtra(StatusStoriesActivity.IS_TEXT_PROGRESS_ENABLED_KEY, true);
-                startActivity(a);
+                Ion.with(ChatActivity.this)
+                        .load(Config.getInstance().url+"/stories/get")
+                        .setBodyParameter("chat_id", getIntent().getStringExtra("chat_id"))
+                        .setBodyParameter("token", meta.token)
+                        .asJsonArray()
+                        .setCallback(new FutureCallback<JsonArray>() {
+                            @Override
+                            public void onCompleted(Exception e, JsonArray result) {
+
+
+                                Log.e("ERR", result.toString());
+
+                                if (result.size() != 0){
+                                    final String[] resources = new String[result.size()];
+
+                                    for (int i = 0; i < result.size(); i++) {
+                                        resources[i] = Config.getInstance().url+result.get(i).getAsJsonObject().get("url").getAsString();
+                                    }
+
+                                    //launch with presettings
+                                    Intent a = new Intent(ChatActivity.this, StatusStoriesActivity.class);
+                                    a.putExtra(StatusStoriesActivity.STATUS_RESOURCES_KEY, resources);
+                                    a.putExtra(StatusStoriesActivity.STATUS_DURATION_KEY, 3000L);
+                                    a.putExtra(StatusStoriesActivity.IS_IMMERSIVE_KEY, true);
+                                    a.putExtra(StatusStoriesActivity.IS_CACHING_ENABLED_KEY, true);
+                                    a.putExtra(StatusStoriesActivity.IS_TEXT_PROGRESS_ENABLED_KEY, true);
+                                    startActivity(a);
+                                }
+                                else {
+
+                                    FancyAlertDialog.Builder alert = new FancyAlertDialog.Builder(ChatActivity.this)
+                                            .setimageResource(R.drawable.ic_face_black_24dp)
+                                            .setTextTitle("NEW STORY")
+                                            .setBody("There is no stories yet, upload one?")
+                                            .setNegativeColor(R.color.colorAccent)
+                                            .setNegativeButtonText("No, thank you")
+                                            .setOnNegativeClicked(new FancyAlertDialog.OnNegativeClicked() {
+                                                @Override
+                                                public void OnClick(View view, Dialog dialog) {
+                                                    dialog.dismiss();
+                                                }
+                                            })
+                                            .setPositiveButtonText("Yes please")
+                                            .setPositiveColor(R.color.colorPrimary)
+                                            .setOnPositiveClicked(new FancyAlertDialog.OnPositiveClicked() {
+                                                @Override
+                                                public void OnClick(View view, Dialog dialog) {
+                                                    EZPhotoPickConfig config = new EZPhotoPickConfig();
+                                                    config.photoSource = PhotoSource.GALLERY; // or PhotoSource.CAMERA
+                                                    config.isAllowMultipleSelect = false; // only for GALLERY pick and API >18
+                                                    EZPhotoPick.startPhotoPickActivity(ChatActivity.this, config);
+                                                }
+                                            })
+                                            .setBodyGravity(FancyAlertDialog.TextGravity.LEFT)
+                                            .setTitleGravity(FancyAlertDialog.TextGravity.CENTER)
+                                            .setCancelable(false)
+                                            .build();
+                                    alert.show();
+
+                                }
+
+
+                            }
+                        });
+
+
 
             }
         });
@@ -114,6 +307,7 @@ public class ChatActivity extends AppCompatActivity {
                                     ChatMessage msg = new ChatMessage(chatMessage.getMessage(), chatMessage.getTimestamp(), ChatMessage.Type.SENT);
                                     chatView.addMessage(msg);
                                     msgBox.setText("");
+                                    Config.getInstance().main.RenderMainPage(meta);
                                 }
                             });
                     return false;
@@ -154,6 +348,32 @@ public class ChatActivity extends AppCompatActivity {
                 });
 
 
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK) {
+            return;
+        }
+
+        if (requestCode == EZPhotoPick.PHOTO_PICK_GALLERY_REQUEST_CODE || requestCode == EZPhotoPick.PHOTO_PICK_CAMERA_REQUEST_CODE) {
+            EZPhotoPickStorage ezPhotoPickStorage = new EZPhotoPickStorage(this);
+            String photoName = data.getStringExtra(EZPhotoPick.PICKED_PHOTO_NAME_KEY);
+            String photoPath = ezPhotoPickStorage.getAbsolutePathOfStoredPhoto("", photoName);
+            Log.e("photo", photoPath);
+
+            Ion.with(ChatActivity.this)
+                    .load(Config.getInstance().url+"/stories/upload")
+                    .setMultipartParameter("chat_id", getIntent().getStringExtra("chat_id"))
+                    .setMultipartFile("photo", "application/image", new File(photoPath))
+                    .asJsonObject()
+                    .setCallback(new FutureCallback<JsonObject>() {
+                        @Override
+                        public void onCompleted(Exception e, JsonObject result) {
+                            Log.e("resp", result+"");
+                        }
+                    });
+        }
     }
 
 }

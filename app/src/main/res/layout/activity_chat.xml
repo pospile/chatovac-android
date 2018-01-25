@@ -10,16 +10,16 @@
         android:layout_weight="3"
         android:weightSum="3"
         android:layout_width="match_parent"
-        android:layout_height="65dp"
+        android:layout_height="80dp"
         android:orientation="horizontal"
         android:background="@color/white">
 
         <TextView
             android:id="@+id/chatName"
-            android:layout_weight="2"
+            android:layout_weight="3"
             android:layout_margin="0dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="70dp"
             android:layout_gravity="center_vertical"
             android:gravity="center_vertical"
             android:paddingLeft="20dp"
@@ -29,6 +29,19 @@
             android:textStyle="bold" />
 
         <ImageView
+            android:id="@+id/story_add_btn"
+            android:tint="@color/colorPrimary"
+            android:foregroundTint="@color/colorPrimary"
+            android:layout_marginRight="20dp"
+            android:layout_gravity="center_vertical"
+            android:foregroundGravity="center_vertical"
+            android:layout_weight="1"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_add_a_photo_black_24dp"/>
+
+
+        <ImageView
             android:id="@+id/story_btn"
             android:tint="@color/colorPrimary"
             android:foregroundTint="@color/colorPrimary"
@@ -36,9 +49,24 @@
             android:layout_gravity="center_vertical"
             android:foregroundGravity="center_vertical"
             android:layout_weight="1"
-            android:layout_width="42dp"
-            android:layout_height="42dp"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
             android:src="@drawable/ic_face_black_24dp"/>
+
+        <ImageView
+            android:id="@+id/settings_btn"
+            android:tint="@color/colorPrimary"
+            android:foregroundTint="@color/colorPrimary"
+            android:layout_marginRight="20dp"
+            android:layout_gravity="center_vertical"
+            android:foregroundGravity="center_vertical"
+            android:layout_weight="1"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_info_outline_black_24dp"/>
+
+
+
 
     </LinearLayout>
 

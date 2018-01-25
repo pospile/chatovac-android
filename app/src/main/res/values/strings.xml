@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Chatovac</string>
+    <string name="rename">Change chat name</string>
+    <string name="add_user">Add user to chat</string>
 </resources>
